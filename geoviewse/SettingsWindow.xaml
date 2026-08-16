@@ -1,0 +1,161 @@
+﻿<Window x:Class="GeoViewSE_Linnaeus.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GeoViewSE_Linnaeus"
+        mc:Ignorable="d"
+        Title="SettingsWindow" Height="450" Width="800">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- CHECKBOXES I TVÅ KOLUMNER -->
+        <StackPanel Grid.Row="0" Grid.Column="0">
+            <CheckBox x:Name="ChkBattles" Content="Visa slagfält"
+                  Checked="ChkBattles_Checked" Unchecked="ChkBattles_Unchecked" IsChecked="True"/>
+
+            <CheckBox x:Name="ChkCaves" Content="Visa grottor"
+                  Checked="ChkCaves_Checked" Unchecked="ChkCaves_Unchecked" IsChecked="True"/>
+            <CheckBox x:Name="ChkHist" Content="Visa historiska data"
+                  Checked="ChkHist_Checked" Unchecked="ChkHist_Unchecked" IsChecked="True"/>
+
+            <CheckBox x:Name="ChkChurchFull" Content="Visa kyrkor (fulltäckande)"
+                  Checked="ChkChurchFull_Checked" Unchecked="ChkChurchFull_Unchecked"/>
+
+            <CheckBox x:Name="ChkHarbours" Content="Visa hamnar"
+                  Checked="ChkHarbours_Checked" Unchecked="ChkHarbours_Unchecked"/>
+
+            <CheckBox x:Name="ChkTrawling" Content="Visa trålgräns"
+                  Checked="ChkTrawling_Checked" Unchecked="ChkTrawling_Unchecked"/>
+
+            <CheckBox x:Name="ChkTC" Content="Visa tätbebygelsernas mittpunkter"
+                  Checked="ChkTC_Checked" Unchecked="ChkTC_Unchecked"/>
+
+            <CheckBox x:Name="ChkUas" Content="Visa UAS-zoner (ED318) - fr. 2026"
+                  Checked="ChkUas_Checked" Unchecked="ChkUas_Unchecked"/>
+
+            <CheckBox x:Name="ChkMarine" Content="Visa world marine heritage sites"
+                  Checked="ChkMarine_Checked" Unchecked="ChkMarine_Unchecked"/>
+
+            <CheckBox x:Name="ChkPbdb" Content="Visa fosiler från PBDB"
+                  Checked="ChkPbdb_Checked" Unchecked="ChkPbdb_Unchecked"/>
+
+            <CheckBox x:Name="ChkOrt" Content="Visa lista med svenska ortnamnselement"
+                  Checked="ChkOrt_Checked" Unchecked="ChkOrt_Unchecked"/>
+
+            <CheckBox x:Name="ChkFyr" Content="Visa fyrar i svenska farvatten"
+                  Checked="ChkFyr_Checked" Unchecked="ChkFyr_Unchecked"/>
+            
+            <CheckBox x:Name="ChkGolf" Content="Visa golfbanor"
+                  Checked="ChkGolf_Checked" Unchecked="ChkGolf_Unchecked"/>
+            
+            <CheckBox x:Name="ChkMarkTemp" Content="Visa maxmarktemp 2023-2025"
+                  Checked="ChkMarkTemp_Checked" Unchecked="ChkMarkTemp_Unchecked"/>
+
+            <CheckBox x:Name="ChkFireClass" Content="Visa brandbränsleklass MSB"
+                  Checked="ChkFireClass_Checked" Unchecked="ChkFireClass_Unchecked"/>
+
+            <CheckBox x:Name="ChkEtymologi"
+          Content="Visa etymologi"
+          Checked="ChkEtymologi_Checked"
+          Unchecked="ChkEtymologi_Unchecked"/>
+
+        </StackPanel>
+
+        <StackPanel Grid.Row="0" Grid.Column="1">
+            <CheckBox x:Name="ChkVattendistrikt" Content="Visa vattendistrikt"
+                  Checked="ChkVattendistrikt_Checked" Unchecked="ChkVattendistrikt_Unchecked"/>
+
+            <CheckBox x:Name="ChkDamLayer" Content="Visa dammar från dammregistret"
+                  Checked="ChkDamLayer_Checked" Unchecked="ChkDamLayer_Unchecked"/>
+
+            <CheckBox x:Name="ChkOsparLayer" Content="Visa gräns för OSPAR-område"
+                  Checked="ChkOsparLayer_Checked" Unchecked="ChkOsparLayer_Unchecked" IsChecked="True"/>
+
+            <CheckBox x:Name="ChkGradnatLayer" Content="Visa gradnät"
+                  Checked="ChkGradnatLayer_Checked" Unchecked="ChkGradnatLayer_Unchecked" IsChecked="True"/>
+
+            <CheckBox x:Name="ChkRuinsLayer" Content="Visa ruiner"
+                  Checked="ChkRuinsLayer_Checked" Unchecked="ChkRuinsLayer_Unchecked"/>
+
+            <CheckBox x:Name="ChkEbh" Content="Visa EBH-områden"
+                  Checked="ChkEbh_Checked" Unchecked="ChkEbh_Unchecked"/>
+
+            <CheckBox x:Name="ChkStationLayer" Content="Visa tågstationer"
+                  Checked="ChkStationLayer_Checked" Unchecked="ChkStationLayer_Unchecked"/>
+
+            <CheckBox x:Name="ChkRailLayer" Content="Visa järnväg"
+                  Checked="ChkRailLayer_Checked" Unchecked="ChkRailLayer_Unchecked"/>
+            <CheckBox x:Name="ChkIceA" Content="Glaciär 10000-11000 år sedan"
+                  Checked="ChkIceA_Checked" Unchecked="ChkIceA_Unchecked"/>
+
+            <CheckBox x:Name="ChkIceB" Content="Glaciär 11000-12000 år sedan"
+                  Checked="ChkIceB_Checked" Unchecked="ChkIceB_Unchecked"/>
+
+            <CheckBox x:Name="ChkIceC" Content="Glaciär 12000-13000 år sedan"
+                  Checked="ChkIceC_Checked" Unchecked="ChkIceC_Unchecked"/>
+
+            <CheckBox x:Name="ChkIceD" Content="Glaciär 13000-13500 år sedan"
+                  Checked="ChkIceD_Checked" Unchecked="ChkIceD_Unchecked"/>
+            
+            <CheckBox x:Name="ChkBomb" Content="Nedslagsplatser för bomber på svensk mark"
+                  Checked="ChkBomb_Checked" Unchecked="ChkBomb_Unchecked"/>
+            <CheckBox x:Name="ChkTv"
+          Content="Visa TV‑platser"
+          Checked="ChkTv_Checked"
+          Unchecked="ChkTv_Unchecked"/>
+
+            <CheckBox x:Name="ChkFilm"
+          Content="Visa Filmplatser"
+          Checked="ChkFilm_Checked"
+          Unchecked="ChkFilm_Unchecked"/>
+
+            <CheckBox x:Name="ChkFootball"
+          Content="Visa Fotbollsplaner"
+          Checked="ChkFootball_Checked"
+          Unchecked="ChkFootball_Unchecked"/>
+
+            <CheckBox x:Name="ChkClientPhotoLayer" Content="Visa fosiler från PBDB"
+                  Checked="ClientPhotoLayer_Checked" Unchecked="ClientPhotoLayer_Unchecked"/>
+
+
+        </StackPanel>
+
+        <!-- ANDRA CHECKBOXAR + TEXTBOX -->
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,10,0,0">
+
+
+            <CheckBox x:Name="ChkHabitat" Content="Effektiv habitat area BB"
+                  Checked="ChkHabitat_Checked" Unchecked="ChkHabitat_Unchecked"/>
+
+            <CheckBox x:Name="ChkStudies" Content="Visa närliggande studier"
+                  Checked="ChkStudies_Checked" Unchecked="ChkStudies_Unchecked" IsChecked="True"/>
+
+            <TextBox x:Name="TxtStudyTagFilter"
+                 Width="200" Height="30" Margin="0,5,0,5"
+                 HorizontalAlignment="Left"
+                 Text="Tag-filter (valfritt)" Foreground="Gray"
+                 GotFocus="TxtStudyTagFilter_GotFocus"
+                 LostFocus="TxtStudyTagFilter_LostFocus"/>
+
+            <CheckBox x:Name="OpenLogWindow" Content="Öppna Logfönster"
+                  Checked="OpenLogWindow_Click"/>
+        </StackPanel>
+
+        <!-- KNAPPAR -->
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,10,0,0">
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>

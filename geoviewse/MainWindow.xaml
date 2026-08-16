@@ -1,0 +1,758 @@
+﻿<Window xmlns:mapsui="clr-namespace:Mapsui.UI.Wpf;assembly=Mapsui.UI.Wpf"
+        x:Class="GeoViewSE_Linnaeus.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:cefSharp="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GeoViewSE_Linnaeus"
+        xmlns:timeslider="clr-namespace:GeoViewSE.timeslider"
+        mc:Ignorable="d"
+        Title="GeoView SE" Height="600" Width="1000"
+        Icon="/data/ikoner/gold_map.ico"
+        KeyDown="Window_KeyDown"
+        Background="#F5F5F5">
+
+    <Window.Resources>
+        <!-- Modern Knapp-stil -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <!-- KARTAN -->
+        <mapsui:MapControl x:Name="mapControl" />
+        <Border BorderBrush="Black"
+        BorderThickness="2"
+        CornerRadius="4"
+        Background="White"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Top"
+        Height="100"
+        Width="150"
+        Margin="200, 75">
+            <mapsui:MapControl x:Name="minimap" Panel.ZIndex="2" Height="100" Width="150" HorizontalAlignment="Right" VerticalAlignment="Top" Background="White" IsHitTestVisible = "False"/>
+        </Border>
+        <cefSharp:ChromiumWebBrowser
+            x:Name="CesiumBrowser"
+            Visibility="Collapsed"/>
+
+        <!-- ÖVERSTA RADEN (HUD) -->
+        <StackPanel VerticalAlignment="Top" HorizontalAlignment="Stretch" Panel.ZIndex="100">
+            <ProgressBar x:Name="InfoProgress" Minimum="0" Maximum="100" Value="0" Height="6" Visibility="Collapsed" Foreground="#FF4CAF50" Background="#22000000" BorderThickness="0"/>
+            <Grid Background="#CC000000" Height="35">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0">
+                    <TextBlock x:Name="TxtUtcClock" Text="UTC: --:--:--" Foreground="White" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                    <!-- NY: Hover info här -->
+                    <TextBlock x:Name="HoverInfoText" 
+                       Foreground="#88FF88" 
+                       VerticalAlignment="Center" 
+                       Margin="20,0,20,0"
+                       FontWeight="SemiBold"/>
+                    <TextBlock x:Name="RenderToggle" Text="Toggla Rendering F12" Foreground="#88FFFFFF" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtCrs"
+           Text="CRS: EPSG:3857"
+           Foreground="#88FFFFFF"
+           VerticalAlignment="Center"
+           Margin="20,0,0,0"/>
+                    <TextBlock x:Name="TxtCamera"
+           Foreground="#88FFFFFF"
+           VerticalAlignment="Center"
+           Margin="20,0,0,0"
+                    />
+                    <TextBlock x:Name="TxtScale"
+           Foreground="#CC66FF"
+           VerticalAlignment="Center"
+           Margin="20,0,0,0"/>
+                    <TextBlock x:Name="TxtArea"
+           Foreground="#A52A2A"
+           FontSize="11"
+           Margin="20,0,0,0"/>
+                    <TextBlock x:Name="TxtZoomLevel"
+           Foreground="#B21177"
+           FontSize="11"
+           Margin="20,0,0,0"/>
+                    <TextBlock x:Name="TxtTimeZone"
+           Foreground="Gold"
+           FontSize="11"
+           Text="UTC+2"
+           Margin="20,0,0,0"/>
+
+                </StackPanel>
+
+                <TextBlock x:Name="SoundOverlay" Foreground="White" Background="#AAFF0000" Padding="5" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+
+                <Button x:Name="PinButton" Width="28" Height="28" HorizontalAlignment="Right" Margin="0,0,10,0" Click="PinButton_Click" Background="Transparent" BorderThickness="0">
+                    <Image Source="/data/ikoner/unpinned.png"/>
+                </Button>
+            </Grid>
+        </StackPanel>
+
+        <!-- VÄNSTERPANEL (Scrollbar för alla lagerknappar) -->
+        <Border Background="#EEFFFFFF" CornerRadius="0,8,8,0" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="250" Margin="0,40,0,10" Padding="10" Panel.ZIndex="1">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" Opacity="0.1" Direction="0"/>
+            </Border.Effect>
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="KARTLAGER" FontWeight="Bold" Margin="0,5" Foreground="#555"/>
+                    <Button Content="Visa/Göm Slott" Click="ToggleCastleLayer" Style="{StaticResource ModernButton}" ToolTip="Visa eller dölj slottslagret på kartan"/>
+                    <Button Content="Botanical Gardens" Click="ToggleBotanicalLayer" Style="{StaticResource ModernButton}" ToolTip="Visa eller dölj botaniska trädgårdar"/>
+                    <Button Content="Visa/Göm Leder" Click="ToggleWalkingRoutes" Style="{StaticResource ModernButton}"/>
+                    <Button Content="Berggrund" Click="ToggleBerggrundLayer" Style="{StaticResource ModernButton}"/>
+                    <Button Content="Vägpassager" Click="TogglePassagesLayer" Style="{StaticResource ModernButton}"/>
+                    <Button Content="3D-Viewer" Click="Oppen3DWiewerWindow" Style="{StaticResource ModernButton}"/>
+
+                    <Separator Margin="0,10"/>
+
+                    <TextBlock Text="DATAHÄMTNING" FontWeight="Bold" Margin="0,5" Foreground="#555"/>
+                    <CheckBox x:Name="CheckBoxSatelliteData" Content="Hämta satellitdata" Margin="0,3"/>
+                    <CheckBox x:Name="ChkSeaTemp" Content="Hämta havstemperatur" Margin="0,3"/>
+                    <CheckBox x:Name="ChkSeaSalinity" Content="Hämta salthalt" Margin="0,3"/>
+
+                    <Button x:Name="BtnDownloadMindatSweden" Content="Mindat-lokaliteter" Background="#007ACC" Foreground="White" FontWeight="Bold" Height="40" Margin="0,10,0,0" Click="BtnDownloadMindatSweden_Click" Style="{StaticResource ModernButton}"/>
+
+                    <Separator Margin="0,10"/>
+
+                    <TextBlock Text="EXTERNA KARTOR" FontWeight="Bold" Margin="0,5" Foreground="#555"/>
+                    <UniformGrid Columns="4">
+                        <Button x:Name="MarineButton" Click="MarineButton_Click" ToolTip="Fartyg" Height="40" Margin="2">
+                            <Image Source="data/ikoner/ship.png" Margin="4"/>
+                        </Button>
+                        <Button x:Name="FlightButton" Click="FlightButton_Click" ToolTip="Flyg" Height="40" Margin="2">
+                            <Image Source="data/ikoner/air_plane.png" Margin="4"/>
+                        </Button>
+                        <Button x:Name="ArtportalenButton" Click="OpenArtfakta_Click" ToolTip="Artportalen" Height="40" Margin="2">
+                            <Image Source="data/ikoner/slu.png" Margin="4"/>
+                        </Button>
+                        <Button x:Name="FornsokButton" Click="FornsokButton_Click" ToolTip="Fornsök" Height="40" Margin="2">
+                            <Image Source="data/ikoner/ra.png" Margin="4"/>
+                        </Button>
+                    </UniformGrid>
+                    <Button Content="Redigera punkter" Click="ToggleEditMode_Click" Style="{StaticResource ModernButton}" Margin="0,10,0,0"/>
+                    <Button Content="Kartväljare" Click="OpenMapSelector_Click" Style="{StaticResource ModernButton}" Margin="0,10,0,0"/>
+                    <ToggleButton x:Name="MusicToggle" 
+              Width="40" Height="40" 
+              Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}"
+              Click="MusicToggle_Click" ToolTip="Spela Bakgrundsmusik">
+                        <Image x:Name="MusicIcon" Source="/data/bilder/music/music_off.png" Stretch="Uniform"/>
+                    </ToggleButton>
+                    <Button Click="OpenDiscorChannel_Click" Width="40" Height="40" HorizontalAlignment="Left"  Style="{StaticResource ModernButton}" Margin="10,10,0,0">
+                        <Image x:Name="DiscordIcon" Source="/data/ikoner/discord.png" Stretch="Uniform"/>
+                    </Button>
+                    <Button Click="OpenStoryTerra_Click" Width="40" Height="40" HorizontalAlignment="Left"  Style="{StaticResource ModernButton}" Margin="10,10,0,0">
+                        <Image x:Name="StorryTerraIcon" Source="/data/ikoner/st.png" Stretch="Uniform"/>
+                    </Button>
+                    <Button Click="OpenMoveBank_Click" Width="40" Height="40" HorizontalAlignment="Left"  Style="{StaticResource ModernButton}" Margin="10,10,0,0">
+                        <Image x:Name="MoveBankIcon" Source="/data/ikoner/movebank.png" Stretch="Uniform"/>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- HÖGERPANEL (Analys) -->
+        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,50,10,0" Width="140">
+            <Button Content="Mät avstånd" Click="StartMeasure_Click" Style="{StaticResource ModernButton}"/>
+            <Button Content="Mät area" Click="StartMeasureArea_Click" Style="{StaticResource ModernButton}"/>
+            <Button Content="Vindkraftverk" Click="ToggleWindLayer_Click" Style="{StaticResource ModernButton}"/>
+            <Button Content="Vattenreningsverk" Click="ToggleWaterLayer_Click" Style="{StaticResource ModernButton}"/>
+
+            <Separator Margin="0,10"/>
+
+            <TextBlock x:Name="ProgressText" Text="Redo" Foreground="#333" HorizontalAlignment="Center" Margin="0,5"/>
+            <Button Content="Kör analys" Click="RunAnalysisButton_Click" Background="#444" Foreground="White" Style="{StaticResource ModernButton}"/>
+        </StackPanel>
+
+        <!-- SÖK OCH AVSTÅND (Flytande) -->
+        <StackPanel x:Name="SearchPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,50,0,0" Visibility="Collapsed">
+            <TextBox x:Name="SearchBox" Width="250" Height="30" VerticalContentAlignment="Center" KeyDown="SearchBox_KeyDown" Background="White"/>
+            <Button Content="Sök" Width="50" Click="SearchButton_Click" Style="{StaticResource ModernButton}" Margin="5,0,0,0"/>
+        </StackPanel>
+
+
+        <!-- BOTTOM CONTROLS -->
+        <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="260,0,0,15" Orientation="Horizontal" Panel.ZIndex="1">
+            <Border Background="#CC000000" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
+                <TextBlock x:Name="MouseCoordText" Foreground="White" FontSize="12" Text="Lon: ---, Lat: ---"/>
+            </Border>
+            <!-- Zoom-knappar (Tillagda igen med modern stil) -->
+            <Button x:Name="ZoomInButton" Content="+" Width="30" Height="28" Margin="0,0,2,0" 
+            FontSize="16" Click="ZoomInButton_Click" ToolTip="Zooma in" Style="{StaticResource ModernButton}"/>
+            <Button x:Name="ZoomOutButton" Content="−" Width="30" Height="28" Margin="0,0,10,0" 
+                    
+            FontSize="16" Click="ZoomOutButton_Click" ToolTip="Zooma ut" Style="{StaticResource ModernButton}"/>
+            <Button x:Name="RotateLeftButton"
+        Content="⟲"
+        Width="30"
+        Height="28"
+        Margin="0,0,2,0"
+        Click="RotateLeftButton_Click"
+        ToolTip="Rotera vänster"
+        Style="{StaticResource ModernButton}"/>
+
+            <Button x:Name="RotateRightButton"
+        Content="⟳"
+        Width="30"
+        Height="28"
+        Margin="0,0,10,0"
+        Click="RotateRightButton_Click"
+        ToolTip="Rotera höger"
+        Style="{StaticResource ModernButton}"/>
+            <Button x:Name="BtnPitchUp"
+        Content="↗"
+        Width="30"
+        Height="28"
+        Margin="0,0,10,0"
+        Click="BtnPitchUp_Click"
+        ToolTip="Öka pitch"
+        Visibility="Collapsed"
+        Style="{StaticResource ModernButton}"/>
+
+            <Button x:Name="BtnPitchDown"
+        Content="↘"
+        Width="30"
+        Height="28"
+        Margin="0,0,10,0"
+        Click="BtnPitchDown_Click"
+        ToolTip="Minska pitch"
+        Visibility="Collapsed"
+        Style="{StaticResource ModernButton}"/>
+            <ComboBox x:Name="RouteSelector"
+          Width="160"
+          Height="28"
+          Margin="10,0,0,0"
+          Visibility="Collapsed">
+                <ComboBoxItem Content="Debug Route"
+                  Tag="debug-route.geojson"
+                  IsSelected="True"/>
+
+            </ComboBox>
+            <Button x:Name="BtnFlyRoute"
+        Content="Fly Route"
+        Width="90"
+        Height="28"
+        Margin="10,0,0,0"
+        Click="BtnFlyRoute_Click"
+        Visibility="Collapsed"
+        Style="{StaticResource ModernButton}"/>
+            <ComboBox x:Name="CmbBaseMap" Width="150" Height="28" SelectionChanged="CmbBaseMap_SelectionChanged">
+                <ComboBoxItem Content="OSM" IsSelected="True"/>
+                <ComboBoxItem Content="ESRI Topo"/>
+                <ComboBoxItem Content="ESRI Physical"/>
+                <ComboBoxItem Content="Bing Aerial"/>
+                <ComboBoxItem Content="Stamen Watercolor"/>
+                <ComboBoxItem Content="Blueprint"/>
+                <ComboBoxItem Content="Cinematic"/>
+            </ComboBox>
+
+            <Button x:Name="BtnSettings" Content="Settings" Width="80" Height="28" Margin="10,0,0,0" Click="BtnSettings_Click" Style="{StaticResource ModernButton}"/>
+
+            <TextBlock x:Name="ZoomIndicator" Foreground="White" Background="#66000000" Padding="5" Margin="10,0,0,8" VerticalAlignment="Center" Text="Resolution: --"/>
+            <Button x:Name="printBtn" VerticalAlignment="Center" Margin="10,0,10,0" Height="30" Width="30" Click="Print" ToolTip="Print" Style="{StaticResource ModernButton}">
+                <Image Source="/data/ikoner/printer.png" Margin="1"/> 
+            </Button>
+            
+        </StackPanel>
+
+        <!-- PRESTANDA + DISTANS (Sammanslaget) -->
+        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="10, 0, 10, 60" Panel.ZIndex="200">
+
+            <!-- Live distance flyttad hit -->
+            <Border x:Name="LiveDistanceBorder"
+            Background="#CC000000"
+            CornerRadius="6"
+            Padding="2"
+            Margin="0,0,0,8"
+            Visibility="{Binding ElementName=LiveDistanceText, Path=Visibility}">
+                <StackPanel Orientation="Horizontal" Margin="8,2">
+                    <TextBlock Text="DISTANS: " Foreground="#88FFFFFF" FontSize="9" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="LiveDistanceText"
+                       Foreground="Yellow"
+                       FontWeight="Normal"
+                       FontSize="14"
+                       Text="0 m"
+                       VerticalAlignment="Center"
+                       Margin="4,0,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border x:Name="PerfPanel" Background="#AA000000" CornerRadius="5" Padding="8" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock x:Name="PerfRam" Foreground="#00FF00" FontSize="11"/>
+                    <TextBlock x:Name="PerfFps" Foreground="#00FF00" FontSize="11"/>
+                    <TextBlock x:Name="PerfDpi"
+           Foreground="#00FF00"
+           FontSize="11"
+/>
+
+                </StackPanel>
+            </Border>
+
+            <Border x:Name="CpuPanel" Background="#AA000000" CornerRadius="5" Padding="8">
+                <StackPanel>
+                <TextBlock x:Name="CpuText" Foreground="White" FontSize="12" Text="CPU: --%"/>
+                <TextBlock x:Name="GpuText" Foreground="White" FontSize="12" Text="GPU: --%"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+
+
+        <!-- CANVASES (Måste ligga sist för att synas överst) -->
+        <Canvas x:Name="ScaleCanvas" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,50" Width="160" Height="40" IsHitTestVisible="False" Panel.ZIndex="50"/>
+        <Canvas x:Name="overlayCanvas" IsHitTestVisible="False" Background="Transparent"/>
+        <Canvas x:Name="iconCanvas" IsHitTestVisible="False" Background="Transparent" Panel.ZIndex="0"/>
+        <Canvas x:Name="locatorCanvas"
+        IsHitTestVisible="False"
+        Background="Transparent"
+        Panel.ZIndex="0">
+
+            <Ellipse x:Name="UserMarker"
+             Width="20"
+             Height="20"
+             Fill="#4A90E2"
+             Stroke="White"
+             StrokeThickness="3"
+             Opacity="0.9"
+             RenderTransformOrigin="0.5,0.5">
+                <Ellipse.RenderTransform>
+                    <ScaleTransform x:Name="PulseTransform" ScaleX="1" ScaleY="1"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+        </Canvas>
+
+        <!-- OVERLAYS (Flytande fönster) -->
+        <Border x:Name="MsbOverlay" Background="#DDCC0000" CornerRadius="8" Padding="15" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="20,215,20,0" Visibility="Collapsed" Width="300">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="⟳" Click="RefreshMsbOverlay_Click" Width="25" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                    <Button Content="X" Click="CloseMsbOverlay_Click" Width="25" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                </StackPanel>
+                <TextBlock x:Name="MsbText" Foreground="White" FontWeight="Bold" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <Border x:Name="DailyOverlay" Background="Honeydew" CornerRadius="12" Padding="25" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Visible" Panel.ZIndex="1" Margin="260, 90, 0, 0">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="30" Opacity="0.3"/>
+            </Border.Effect>
+            <StackPanel HorizontalAlignment="Center">
+                <Image x:Name="FlagImage" Width="100" Height="60" Margin="0,0,0,15" Visibility="Collapsed" Source="/data/ikoner/16x16_sweden.png"/>
+                <TextBlock x:Name="NamnsdagText" FontSize="22" FontWeight="Bold" TextAlignment="Center" Margin="0,0,0,20"/>
+                <Button Content="✕" Click="CloseOverlay_Click" Width="80" Height="35" Style="{StaticResource ModernButton}"/>
+            </StackPanel>
+        </Border>
+        <Border x:Name="SpecialDaysOverlay"
+        Background="#FFF3E6"              
+            CornerRadius="12"
+        Padding="25"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        Visibility="Collapsed"
+        Panel.ZIndex="1"
+        Margin="260, 260, 0, 0">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="30" Opacity="0.3"/>
+            </Border.Effect>
+
+            <StackPanel HorizontalAlignment="Center">
+
+                <TextBlock x:Name="SpecialDayTitle"
+                   FontSize="22"
+                   FontWeight="Bold"
+                   TextAlignment="Center"
+                   Margin="0,0,0,10"/>
+
+
+                <Button Content="✕"
+                Click="CloseSpecialOverlay_Click"
+                Width="80"
+                Height="35"
+                Style="{StaticResource ModernButton}"/>
+            </StackPanel>
+        </Border>
+        <Border x:Name="OrtNamnselementOverlay"
+        Background="#FFF3E6"
+        CornerRadius="12"
+        Padding="25"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        Visibility="Collapsed"
+        Panel.ZIndex="10"
+        Margin="260,260,0,0"
+        Width="500">
+
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="15"
+                            ShadowDepth="3"
+                            Opacity="0.3"/>
+            </Border.Effect>
+
+            <StackPanel>
+
+                <TextBlock Text="Ortnamnselement"
+                   FontSize="22"
+                   FontWeight="Bold"
+                   TextAlignment="Center"
+                   Margin="0,0,0,15"/>
+
+                <ListBox x:Name="OrtNamnselementList"
+                 BorderThickness="0"
+                 Background="Transparent"
+                 HorizontalContentAlignment="Stretch"/>
+
+                <Button Content="✕"
+                Click="CloseOrtNamnselementOverlay_Click"
+                Width="80"
+                Height="35"
+                Margin="0,15,0,0"
+                HorizontalAlignment="Center"
+                Style="{StaticResource ModernButton}"/>
+
+            </StackPanel>
+
+        </Border>
+
+        <Border x:Name="FloatingPanel"
+        Background="Transparent"
+        BorderBrush="Black"
+        BorderThickness="0"
+        Width="40"
+        Height="40"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        Margin="260, 40, 0, 0"
+        Panel.ZIndex="100"
+        Padding="8">
+
+            <StackPanel>
+                <Button Background="HotPink" 
+                   Foreground="White"
+                   Padding="0"
+                        Height="26"
+                        Width="26"
+                        Content="🏠"
+                        Click="FlytoHome"/>
+                <!-- Lägg fler kontroller här -->
+            </StackPanel>
+        </Border>
+        <Border x:Name="CopilotPanel" Background="#1A1A1A" Width="190" HorizontalAlignment="Right" Visibility="Collapsed" BorderBrush="#333" BorderThickness="1" Panel.ZIndex="2">
+            <Grid Margin="15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                    <TextBlock Text="AI COPILOT" Foreground="White" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                    <Button Content="✕" Click="CloseCopilot_Click" HorizontalAlignment="Right" Background="Transparent" Foreground="Gray" BorderThickness="0" Margin="260,0,0,0"/>
+                </StackPanel>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,15">
+                    <TextBlock x:Name="CopilotOutput" Foreground="#DDD" TextWrapping="Wrap" FontSize="13" LineHeight="18"/>
+                </ScrollViewer>
+                <StackPanel Grid.Row="2">
+                    <TextBox x:Name="CopilotInput" Height="80" TextWrapping="Wrap" AcceptsReturn="True" Background="#252525" Foreground="White" BorderThickness="1" BorderBrush="#444" Padding="8"/>
+                    <Button Content="Fråga AI" Click="SendToCopilot_Click" Margin="0,10,0,0" Height="40" Background="#007ACC" Foreground="White" FontWeight="Bold" Style="{StaticResource ModernButton}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border x:Name="MuseumBanner"
+        Background="#FF111111"
+        CornerRadius="10"
+        Padding="15"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Top"
+        Margin="0,80,20,0"
+        Visibility="Collapsed"
+        Width="350"
+        Panel.ZIndex="1000">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="25" Opacity="0.4"/>
+            </Border.Effect>
+
+            <StackPanel>
+                <TextBlock Text="Närliggande museiföremål"
+                   FontSize="18"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="0,0,0,10"/>
+                <ScrollViewer Height="400">
+                    <ItemsControl x:Name="MuseumList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <Image Source="{Binding Thumbnail}" Width="60" Height="60" Margin="0,0,10,0"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding Institution}" Foreground="LightGray"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <Button Content="Stäng" Click="CloseMuseumBanner_Click"
+                Width="80" Height="30" HorizontalAlignment="Right"/>
+            </StackPanel>
+        </Border>
+        <Border x:Name="MindatBanner" Background="#2C3E50" BorderBrush="#3498DB" BorderThickness="2" 
+        CornerRadius="8" Margin="10" Padding="15" Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock Text="Närliggande mineral o fynd (Mindat)" 
+                   FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+
+                <ScrollViewer Height="380" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="MindatList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,6">
+                                    <Image Source="{Binding ImageUrl}" 
+                                   Width="64" Height="64" Margin="0,0,12,0"
+                                   Stretch="UniformToFill"/>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" 
+                                           Foreground="White" FontWeight="SemiBold" FontSize="14"/>
+                                        <TextBlock Text="{Binding Formula}" 
+                                           Foreground="#A0C4FF" FontSize="13"/>
+                                        <TextBlock Text="{Binding Locality}" 
+                                           Foreground="LightGray" FontSize="12"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Button Content="Stäng" Click="CloseMindatBanner_Click" 
+                Width="90" Height="32" HorizontalAlignment="Right" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Border>
+        <Border x:Name="NavigationPad"
+        Width="90"
+        Height="90"
+        CornerRadius="45"
+        Background="#AAFFFFFF"
+        BorderBrush="#55FFFFFF"
+        BorderThickness="1"
+        Visibility="Visible"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Bottom"
+        Margin="650,0,0,25">
+
+            <Grid>
+
+                <Button Content="▲"
+                Width="28"
+                Height="28"
+                VerticalAlignment="Top"
+                Click="PanUp_Click"/>
+
+                <Button Content="▼"
+                Width="28"
+                Height="28"
+                VerticalAlignment="Bottom"
+                Click="PanDown_Click"/>
+
+                <Button Content="◄"
+                Width="28"
+                Height="28"
+                HorizontalAlignment="Left"
+                Click="PanLeft_Click"/>
+
+                <Button Content="►"
+                Width="28"
+                Height="28"
+                HorizontalAlignment="Right"
+                Click="PanRight_Click"/>
+
+            </Grid>
+            
+        </Border>
+        <Button x:Name="Btn3D"
+        Width="64"
+        Height="64"
+        FontSize="18"
+        Content="🌍"
+        ToolTip="3D View"
+        Click="Btn3D_Click"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Bottom"
+        Margin="0,0,170,35"
+        Visibility="Hidden">
+
+            <Button.Style>
+                <Style TargetType="Button">
+
+                    <Setter Property="Background" Value="#CCFFFFFF"/>
+                    <Setter Property="BorderBrush" Value="#55FFFFFF"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+
+                </Style>
+            </Button.Style>
+
+        </Button>
+        <!-- Norrpil -->
+        <Image x:Name="NorthArrow" 
+       Source="/data/ikoner/n_arrow.png"
+       Width="48" 
+       Height="48"
+       HorizontalAlignment="Right"
+       VerticalAlignment="Top"
+       Margin="0,400,150,0"
+       Visibility="Visible"
+       RenderTransformOrigin="0.5,0.5">
+            <Image.RenderTransform>
+                <RotateTransform x:Name="NorthArrowRotation" Angle="0"/>
+            </Image.RenderTransform>
+        </Image>
+        <Border x:Name="HoverBorder"
+        Background="Transparent"
+        Width="100"
+        Height="100"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        Margin="0,0,0,0"/>
+        <Border x:Name="BrandLegend"
+        Background="#EEFFFFFF"
+        CornerRadius="8"
+        Padding="10"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Top"
+        Margin="260, 140, 0, 0"
+        Visibility="Collapsed"
+        Width="260"
+        Panel.ZIndex="2">
+
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="Brandbränsleklassificering"
+                       FontWeight="Bold"
+                       FontSize="16"
+                       Foreground="#333"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Center"
+                       Margin="0,0,10,0"/>
+
+                    <Button Content="✕"
+                    Width="25"
+                    Height="25"
+                    Background="Transparent"
+                    Foreground="#444"
+                    BorderThickness="0"
+                    Click="CloseBrandLegend_Click"/>
+                </StackPanel>
+
+                <!-- BR 1 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#FF0000"/>
+                    <TextBlock Text="BR 1 – Barrskog, lav och risdominerad" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- BR 2 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#FF7F00"/>
+                    <TextBlock Text="BR 2 – Barrskog, mossa och risdominerad" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- BR 3 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#FFFF00"/>
+                    <TextBlock Text="BR 3 – Barrskog, ört dominerad" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- LV 2 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#99FF99"/>
+                    <TextBlock Text="LV 2 – Löv/blandskog utan örtvegetation" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- LV 3 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#009900"/>
+                    <TextBlock Text="LV 3 – Löv/blandskog med örtvegetation" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- TV 1 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#FF66CC"/>
+                    <TextBlock Text="TV 1 – Trädklädd torvmark, talldominerad" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- TV 2 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#66CCFF"/>
+                    <TextBlock Text="TV 2 – Trädklädd torvmark, utan tall" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- IV 1 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#0000FF"/>
+                    <TextBlock Text="IV 1 – Öppen vattenyta" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- IB 1 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#333333"/>
+                    <TextBlock Text="IB 1 – Hårdgjord mark, byggnad" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- IB 2 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#777777"/>
+                    <TextBlock Text="IB 2 – Hårdgjord mark, väg" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- IB 3 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#BBBBBB"/>
+                    <TextBlock Text="IB 3 – Hårdgjord mark, övrigt" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- IO 1 -->
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Rectangle Width="20" Height="20" Fill="#FFFFFF" Stroke="Black" StrokeThickness="1"/>
+                    <TextBlock Text="IO 1 – Öppen mark utan vegetation" Margin="10,0,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <timeslider:TimeSliderControl x:Name="TimeSlider"
+                               VerticalAlignment="Bottom"
+                               HorizontalAlignment="Right"
+                               Width="500"
+                               Margin="0,0,110,120">
+            <timeslider:TimeSliderControl.LayoutTransform>
+                <ScaleTransform ScaleX="0.6" ScaleY="0.6"/>
+            </timeslider:TimeSliderControl.LayoutTransform>
+        </timeslider:TimeSliderControl>
+
+        <timeslider:TimeShuttleControl x:Name="TimeShuttle"
+                                VerticalAlignment="Bottom"
+                                HorizontalAlignment="Right"
+                                Margin="0,0,150,190">
+            <timeslider:TimeShuttleControl.LayoutTransform>
+                <ScaleTransform ScaleX="0.6" ScaleY="0.6"/>
+            </timeslider:TimeShuttleControl.LayoutTransform>
+        </timeslider:TimeShuttleControl>
+    </Grid>
+</Window>
